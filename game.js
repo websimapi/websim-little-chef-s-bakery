@@ -226,7 +226,7 @@ function startMixingPhase() {
 
     const bowl = document.getElementById('bowl');
     // Change bowl content to unmixed blob
-    bowl.innerHTML = `<div style="width:100%; height:100%; background:${state.currentRecipe.mixColor}; border-radius:50%; transform: scale(0.5); transition: transform 0.5s;"></div>";
+    bowl.innerHTML = `<div style="width:100%; height:100%; background:${state.currentRecipe.mixColor}; border-radius:50%; transform: scale(0.5); transition: transform 0.5s;"></div>`;
 
     el.progress.classList.remove('hidden');
     state.mixProgress = 0;
