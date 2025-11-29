@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Little Chef's Bakery</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Nipple.js for mobile controls if needed, though we primarily use custom drag -->
+    <script type="importmap">
+        {
+            "imports": {
+                "confetti": "https://esm.sh/canvas-confetti@1.6.0"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- Background Layer -->
+        <div id="background-layer"></div>
+
+        <!-- Gameplay Layer (Ingredients, Bowls, Oven) -->
+        <div id="gameplay-layer"></div>
+
+        <!-- UI Layer (Chef, Text, Buttons) -->
+        <div id="ui-layer">
+            <div id="chef-container" class="hidden">
+                <img src="asset_chef_happy.png" alt="Chef" id="chef-img">
+                <div id="speech-bubble">Welcome to the Bakery!</div>
+            </div>
+            
+            <div id="progress-container" class="hidden">
+                <div id="progress-bar-fill"></div>
+            </div>
+
+            <button id="photo-btn" class="hidden">📸 Snap!</button>
+        </div>
+
+        <!-- Overlays -->
+        <div id="overlay-layer">
+            <div id="start-screen">
+                <h1>Little Chef's Bakery</h1>
+                <button id="start-btn" class="pulse-btn">Tap to Play!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Elements -->
+    <audio id="bgm" loop>
+        <source src="bgm_cheerful.mp3" type="audio/mpeg">
+    </audio>
+
+    <script type="module" src="game.js"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
