@@ -16,6 +16,7 @@ const state = {
 const el = {
     container: document.getElementById('game-container'),
     gameLayer: document.getElementById('gameplay-layer'),
+    uiLayer: document.getElementById('ui-layer'),
     overlayLayer: document.getElementById('overlay-layer'),
     chef: document.getElementById('chef-container'),
     speech: document.getElementById('speech-bubble'),
@@ -304,7 +305,7 @@ function startMixingPhase() {
 
         // Calculate distance moved
         const dist = Math.sqrt(Math.pow(pos.x - lastX, 2) + Math.pow(pos.y - lastY, 2));
-        if (dist > 50) { // Limit huge jumps
+        if (dist > 150) { // Limit huge jumps
              lastX = pos.x;
              lastY = pos.y;
              return;
@@ -315,8 +316,8 @@ function startMixingPhase() {
         lastY = pos.y;
 
         // Progress based on movement
-        if (totalDist > 20) { // Every 20px moved
-            state.mixProgress += 2;
+        if (totalDist > 15) { // Every 15px moved
+            state.mixProgress += 3;
             totalDist = 0;
             updateProgress();
             
