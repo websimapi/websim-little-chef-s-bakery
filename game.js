@@ -242,7 +242,7 @@ function startMixingPhase() {
             box-shadow: inset 5px 5px 20px rgba(0,0,0,0.1);
             transition: transform 0.1s;
         "></div>
-        <img id="spoon" src="asset_tool_spoon.png" style="
+        <img id="spoon" src="asset_tool_spoon.png" draggable="false" style="
             width: 100px; 
             height: 100px; 
             position: absolute; 

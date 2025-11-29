@@ -37,7 +37,11 @@ body, html {
     pointer-events: none; /* Let clicks pass through by default */
 }
 
-#gameplay-layer, #ui-layer, #overlay-layer {
+#gameplay-layer {
+    pointer-events: auto;
+}
+
+#ui-layer > *, #overlay-layer > * {
     pointer-events: auto;
 }
 
