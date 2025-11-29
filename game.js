@@ -222,43 +222,164 @@ function addIngredientToBowl(element) {
 // --- Mixing Phase (Stirring) ---
 function startMixingPhase() {
     state.phase = 'stir';
-    chefSay("All in! Now stir it up! Rub the bowl.");
+    chefSay("Use the spoon to stir the batter! Mix it well!");
 
     const bowl = document.getElementById('bowl');
-    // Change bowl content to unmixed blob
-    bowl.innerHTML = `<div style="width:100%; height:100%; background:${state.currentRecipe.mixColor}; border-radius:50%; transform: scale(0.5); transition: transform 0.5s;"></div>`;
+    
+    // Rebuild bowl content to include batter and spoon
+    // We keep the bowl image as the background context
+    bowl.innerHTML = `
+        <img src="asset_bowl.png" style="width:100%; height:100%; object-fit:contain; position:absolute; top:0; left:0; pointer-events:none;">
+        <div id="batter" style="
+            width: 60%; 
+            height: 60%; 
+            background: ${state.currentRecipe.mixColor}; 
+            border-radius: 50%; 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%) scale(0.8);
+            box-shadow: inset 5px 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.1s;
+        "></div>
+        <img id="spoon" src="asset_tool_spoon.png" style="
+            width: 100px; 
+            height: 100px; 
+            position: absolute; 
+            top: 40%; 
+            left: 50%; 
+            transform: translate(-50%, -50%) rotate(15deg); 
+            cursor: grab;
+            z-index: 100;
+            filter: drop-shadow(5px 5px 5px rgba(0,0,0,0.2));
+        ">
+    `;
+
+    const batter = document.getElementById('batter');
+    const spoon = document.getElementById('spoon');
 
     el.progress.classList.remove('hidden');
     state.mixProgress = 0;
     updateProgress();
 
-    // Add stir listener
+    // Stir Logic
+    let isStirring = false;
     let lastX = 0;
-    const handleStir = (e) => {
+    let lastY = 0;
+    let totalDist = 0;
+
+    const getLocalPos = (e) => {
+        const rect = bowl.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const diff = Math.abs(clientX - lastX);
-        lastX = clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
+    };
 
-        if (diff > 2) { // Minimal movement
-            state.mixProgress += 1; // Increment faster for kids
+    const handleStart = (e) => {
+        e.preventDefault();
+        isStirring = true;
+        spoon.style.cursor = 'grabbing';
+        const pos = getLocalPos(e);
+        lastX = pos.x;
+        lastY = pos.y;
+        
+        // Snap spoon to finger initially?
+        updateSpoonPos(pos.x, pos.y);
+        
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', handleMove, {passive: false});
+        document.addEventListener('mouseup', handleEnd);
+        document.addEventListener('touchend', handleEnd);
+    };
+
+    const handleMove = (e) => {
+        if (!isStirring) return;
+        e.preventDefault();
+        const pos = getLocalPos(e);
+        
+        updateSpoonPos(pos.x, pos.y);
+
+        // Calculate distance moved
+        const dist = Math.sqrt(Math.pow(pos.x - lastX, 2) + Math.pow(pos.y - lastY, 2));
+        if (dist > 50) { // Limit huge jumps
+             lastX = pos.x;
+             lastY = pos.y;
+             return;
+        }
+
+        totalDist += dist;
+        lastX = pos.x;
+        lastY = pos.y;
+
+        // Progress based on movement
+        if (totalDist > 20) { // Every 20px moved
+            state.mixProgress += 2;
+            totalDist = 0;
             updateProgress();
-
-            // Visual feedback
-            bowl.children[0].style.transform = `scale(${0.5 + (state.mixProgress/200)}) rotate(${state.mixProgress}deg)`;
+            
+            // Visual feedback on batter
+            const swirl = (state.mixProgress * 5) % 360;
+            const scale = 0.8 + (state.mixProgress / 500); // Grow slightly
+            batter.style.transform = `translate(-50%, -50%) scale(${scale}) rotate(${swirl}deg)`;
+            
+            // Play sound occasionally
+            if (state.mixProgress % 10 === 0) {
+               // Soft pop or just visual is fine. 
+               // Maybe wiggle the bowl?
+            }
 
             if (state.mixProgress >= 100) {
-                bowl.removeEventListener('mousemove', handleStir);
-                bowl.removeEventListener('touchmove', handleStir);
+                handleEnd();
                 finishMixing();
             }
         }
     };
 
-    bowl.addEventListener('mousedown', (e) => { lastX = e.clientX; bowl.addEventListener('mousemove', handleStir); });
-    bowl.addEventListener('touchstart', (e) => { lastX = e.touches[0].clientX; bowl.addEventListener('touchmove', handleStir); });
+    const handleEnd = () => {
+        isStirring = false;
+        spoon.style.cursor = 'grab';
+        document.removeEventListener('mousemove', handleMove);
+        document.removeEventListener('touchmove', handleMove);
+        document.removeEventListener('mouseup', handleEnd);
+        document.removeEventListener('touchend', handleEnd);
+    };
 
-    document.addEventListener('mouseup', () => bowl.removeEventListener('mousemove', handleStir));
-    document.addEventListener('touchend', () => bowl.removeEventListener('touchmove', handleStir));
+    const updateSpoonPos = (x, y) => {
+        // Constrain to bowl area somewhat
+        // Bowl is 250x250. Center is 125,125.
+        // Let's allow movement within a radius.
+        const cx = 125;
+        const cy = 125;
+        const radius = 80;
+        
+        let dx = x - cx;
+        let dy = y - cy;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist > radius) {
+            const angle = Math.atan2(dy, dx);
+            x = cx + Math.cos(angle) * radius;
+            y = cy + Math.sin(angle) * radius;
+        }
+
+        // Add some "stirring tilt"
+        const tilt = (x - cx) * 0.2; // Tilt based on X position relative to center
+
+        spoon.style.left = `${x}px`;
+        spoon.style.top = `${y}px`;
+        spoon.style.transform = `translate(-50%, -80%) rotate(${tilt}deg)`; // -80% Y to hold by handle? Adjust as needed
+        // Spoon image center is roughly middle. 
+        // If we want to look like holding handle, we might offset differently.
+        // Let's stick to center-ish for simplicity.
+        spoon.style.transform = `translate(-50%, -50%) rotate(${tilt}deg)`;
+    };
+
+    // Attach start listener to the whole bowl area to make it easy to grab
+    bowl.addEventListener('mousedown', handleStart);
+    bowl.addEventListener('touchstart', handleStart, {passive: false});
 }
 
 function updateProgress() {
@@ -268,6 +389,12 @@ function updateProgress() {
 function finishMixing() {
     playSound('correct');
     el.progress.classList.add('hidden');
+    
+    // Remove listeners (cleanup handled in handleEnd but just in case)
+    const bowl = document.getElementById('bowl');
+    const newBowl = bowl.cloneNode(true); // Quick way to strip listeners
+    bowl.parentNode.replaceChild(newBowl, bowl);
+    
     chefSay("Perfect batter! Let's bake it.");
     setTimeout(startBakePhase, 2000);
 }
