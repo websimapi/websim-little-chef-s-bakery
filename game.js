@@ -9,7 +9,8 @@ const state = {
     mixProgress: 0,
     isDragging: false,
     dragElement: null,
-    dragOffset: { x: 0, y: 0 }
+    dragOffset: { x: 0, y: 0 },
+    decorationsLog: [] // Store {img, x, y}
 };
 
 // --- DOM Elements ---
@@ -83,6 +84,7 @@ function showMenu() {
 function startRecipe(recipe) {
     state.currentRecipe = recipe;
     state.addedIngredients = [];
+    state.decorationsLog = []; // Reset log
     document.getElementById('recipe-menu').remove();
     startGatherPhase();
 }
@@ -513,6 +515,32 @@ function spawnDecoration(e, imgSrc) {
 }
 
 function dropDecoration(e) {
+    if (!state.dragElement) return;
+
+    // Capture position relative to window center (roughly where product is)
+    // Product is 300x300 centered. 
+    const rect = state.dragElement.getBoundingClientRect();
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    
+    // Store offset from center
+    const relX = rect.left + (rect.width/2) - centerX;
+    const relY = rect.top + (rect.height/2) - centerY;
+    
+    // We only log if it's somewhat near the center (on the product)
+    if (Math.abs(relX) < 150 && Math.abs(relY) < 150) {
+        // Extract filename from src
+        const src = state.dragElement.querySelector('img').src;
+        // get just the filename
+        const filename = src.substring(src.lastIndexOf('/') + 1);
+        
+        state.decorationsLog.push({
+            img: filename,
+            x: relX,
+            y: relY
+        });
+    }
+
     handleEnd(e); // Stop dragging
     playSound('pop');
     // We don't remove decorations, they stick where dropped
@@ -532,7 +560,7 @@ function takePhoto() {
     el.uiLayer.style.display = 'none'; // Hide UI for moment
     setTimeout(() => {
         el.uiLayer.style.display = 'block';
-        chefSay("Looks delicious! Tap the menu button to make more.");
+        chefSay("Delicious! Watch your baking movie?");
 
         // Add reset button
         const resetBtn = document.createElement('button');
@@ -542,10 +570,34 @@ function takePhoto() {
         resetBtn.style.left = '20px';
         resetBtn.onclick = () => window.location.reload();
         el.overlayLayer.appendChild(resetBtn);
+        
+        // Add Replay Button
+        const replayBtn = document.createElement('button');
+        replayBtn.innerText = "Watch Replay 🎥";
+        replayBtn.style.position = 'absolute';
+        replayBtn.style.bottom = '100px'; // Above chef
+        replayBtn.style.left = '50%';
+        replayBtn.style.transform = 'translateX(-50%)';
+        replayBtn.onclick = () => {
+            // Trigger Replay
+            document.getElementById('replay-layer').classList.remove('hidden');
+            if (window.mountReplay) {
+                window.mountReplay({
+                    recipe: state.currentRecipe,
+                    decorations: state.decorationsLog
+                });
+            }
+        };
+        el.overlayLayer.appendChild(replayBtn);
 
         el.photoBtn.remove();
     }, 1000);
 }
+
+// Replay Close Button Logic
+document.getElementById('close-replay-btn').addEventListener('click', () => {
+    document.getElementById('replay-layer').classList.add('hidden');
+});
 
 // --- Utils ---
 function clearScene() {
